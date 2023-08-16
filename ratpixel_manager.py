@@ -26,36 +26,42 @@ async def mc_status(interaction):
 @tree.command(name="minecraft_start", description="Starts the Minecraft server.", guild=discord.Object(id=rat_pile_discord_id))
 async def mc_start(interaction):
     if interaction.permissions.administrator:
-        try:
-            ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=True)
-        except ClientError as e:
-            if 'DryRunOperation' not in str(e):
-                raise
+        if response['InstanceStatuses']:
+            try:
+                ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=True)
+            except ClientError as e:
+                if 'DryRunOperation' not in str(e):
+                    raise
 
-        try:
-            response = ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=False)
-            print(response)
-            await interaction.response.send_message(f'The Minecraft server is now being started.')
-        except ClientError as e:
-            await interaction.response.send_message(f'The starting process encountered an error: {e}')
+            try:
+                response = ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=False)
+                print(response)
+                await interaction.response.send_message(f'The Minecraft server is now being started.')
+            except ClientError as e:
+                await interaction.response.send_message(f'The starting process encountered an error: {e}')
+        else:
+            await interaction.response.send_message(f'The server is already started or is in the process of starting.')
     else:
         await interaction.response.send_message(f'This command can only be executed by server admins.')
 
 @tree.command(name="minecraft_stop", description="Stops the Minecraft server.", guild=discord.Object(id=rat_pile_discord_id))
 async def mc_stop(interaction):
     if interaction.permissions.administrator:
-        try:
-            ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=True)
-        except ClientError as e:
-            if 'DryRunOperation' not in str(e):
-                raise
+        if not response['InstanceStatuses']:
+            try:
+                ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=True)
+            except ClientError as e:
+                if 'DryRunOperation' not in str(e):
+                    raise
 
-        try:
-            response = ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=False)
-            print(response)
-            await interaction.response.send_message(f'The Minecraft server is now being stopped.')
-        except ClientError as e:
-            await interaction.response.send_message(f'The stopping process encountered an error: {e}')
+            try:
+                response = ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=False)
+                print(response)
+                await interaction.response.send_message(f'The Minecraft server is now being stopped.')
+            except ClientError as e:
+                await interaction.response.send_message(f'The stopping process encountered an error: {e}')
+        else:
+            await interaction.response.send_message(f'The server is already stopped.')
     else:
         await interaction.response.send_message(f'This command can only be executed by server admins.')
 
