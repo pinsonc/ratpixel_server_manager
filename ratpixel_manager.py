@@ -25,14 +25,14 @@ async def mc_status(interaction, arg):
 
 @tree.command(name="server_start", description="Starts the specified server.", guild=discord.Object(id=rat_pile_discord_id))
 @tree.choices(games=[
-    app_commands.Choice(name="terraria", value=1),
-    app_commands.Choice(name="minecraft", value=2)
+    app_commands.Choice(name="Terraria", value=1),
+    app_commands.Choice(name="Minecraft", value=2)
 ])
 async def mc_start(interaction, games: app_commands.Choice[int]):
     if interaction.permissions.administrator:
-        if games.name == "minecraft":
+        if games.name == "Minecraft":
             id = minecraft_server_id
-        elif games.name == "terraria":
+        elif games.name == "Terraria":
             id = terraria_server_id
         response = ec2.describe_instance_status(InstanceIds=[id])
         if not response['InstanceStatuses']:
