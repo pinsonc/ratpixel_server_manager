@@ -26,6 +26,7 @@ async def mc_status(interaction):
 @tree.command(name="minecraft_start", description="Starts the Minecraft server.", guild=discord.Object(id=rat_pile_discord_id))
 async def mc_start(interaction):
     if not interaction.permissions.administrator:
+        response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
         if not response['InstanceStatuses']:
             try:
                 ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=True)
@@ -47,6 +48,7 @@ async def mc_start(interaction):
 @tree.command(name="minecraft_stop", description="Stops the Minecraft server.", guild=discord.Object(id=rat_pile_discord_id))
 async def mc_stop(interaction):
     if interaction.permissions.administrator:
+        response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
         if response['InstanceStatuses']:
             try:
                 ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=True)
