@@ -1,6 +1,5 @@
 import discord
 from discord import app_commands
-from discord.ext.commands import has_permissions, CheckFailure
 import boto3
 from botocore.exceptions import ClientError
 import config as CONFIG
@@ -8,6 +7,7 @@ import config as CONFIG
 discord_secret = CONFIG.config['discord_secret']
 minecraft_server_id = CONFIG.config['mc_id']
 rat_pile_discord_id = CONFIG.config['server_id']
+terraria_server_id = CONFIG.config['terraria_id']
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -16,56 +16,72 @@ tree = app_commands.CommandTree(client)
 ec2 = boto3.client('ec2', region_name='us-east-1')
 
 @tree.command(name="minecraft_status", description="Reports whether the underlying Minecraft server is online.", guild=discord.Object(id=rat_pile_discord_id))
-async def mc_status(interaction):
+async def mc_status(interaction, arg):
     response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
     if response['InstanceStatuses']:
         await interaction.response.send_message(f"The Minecraft server is running.")
     else:
         await interaction.response.send_message("The Minecraft server is not running.")
 
-@tree.command(name="minecraft_start", description="Starts the Minecraft server.", guild=discord.Object(id=rat_pile_discord_id))
-async def mc_start(interaction):
+@tree.command(name="server_start", description="Starts the specified server.", guild=discord.Object(id=rat_pile_discord_id))
+@tree.choices(games=[
+    app_commands.Choice(name="terraria", value=1),
+    app_commands.Choice(name="minecraft", value=2)
+])
+async def mc_start(interaction, games: app_commands.Choice[int]):
     if interaction.permissions.administrator:
-        response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
+        if games.name == "minecraft":
+            id = minecraft_server_id
+        elif games.name == "terraria":
+            id = terraria_server_id
+        response = ec2.describe_instance_status(InstanceIds=[id])
         if not response['InstanceStatuses']:
             try:
-                ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=True)
+                ec2.start_instances(InstanceIds=[id], DryRun=True)
             except ClientError as e:
                 if 'DryRunOperation' not in str(e):
                     raise
 
             try:
-                response = ec2.start_instances(InstanceIds=[minecraft_server_id], DryRun=False)
+                response = ec2.start_instances(InstanceIds=[id], DryRun=False)
                 print(response)
-                await interaction.response.send_message(f'The Minecraft server is now being started.')
+                await interaction.response.send_message(f'The {games.name} server is now being started.')
             except ClientError as e:
                 await interaction.response.send_message(f'The starting process encountered an error: {e}')
         else:
             await interaction.response.send_message('The server is already started or is in the process of starting.')
     else:
-        await interaction.response.send_message(f'This command can only be executed by server admins.')
+        await interaction.response.send_message('This command can only be executed by server admins.')
 
-@tree.command(name="minecraft_stop", description="Stops the Minecraft server.", guild=discord.Object(id=rat_pile_discord_id))
-async def mc_stop(interaction):
+@tree.command(name="server_stop", description="Stops the specified server.", guild=discord.Object(id=rat_pile_discord_id))
+@tree.choices(games=[
+    app_commands.Choice(name="Terraria", value=1),
+    app_commands.Choice(name="Minecraft", value=2)
+])
+async def mc_stop(interaction, games: app_commands.Choice[int]):
     if interaction.permissions.administrator:
-        response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
+        if games.name == "Minecraft":
+            id = minecraft_server_id
+        elif games.name == "Terraria":
+            id = terraria_server_id
+        response = ec2.describe_instance_status(InstanceIds=[id])
         if response['InstanceStatuses']:
             try:
-                ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=True)
+                ec2.stop_instances(InstanceIds=[id], DryRun=True)
             except ClientError as e:
                 if 'DryRunOperation' not in str(e):
                     raise
 
             try:
-                response = ec2.stop_instances(InstanceIds=[minecraft_server_id], DryRun=False)
+                response = ec2.stop_instances(InstanceIds=[id], DryRun=False)
                 print(response)
-                await interaction.response.send_message(f'The Minecraft server is now being stopped.')
+                await interaction.response.send_message(f'The {games.name} server is now being stopped.')
             except ClientError as e:
-                await interaction.response.send_message(f'The stopping process encountered an error: {e}')
+                await interaction.response.send_message('The stopping process encountered an error: {e}')
         else:
             await interaction.response.send_message('The server is already stopped.')
     else:
-        await interaction.response.send_message(f'This command can only be executed by server admins.')
+        await interaction.response.send_message('This command can only be executed by server admins.')
 
 @client.event
 async def on_ready():
