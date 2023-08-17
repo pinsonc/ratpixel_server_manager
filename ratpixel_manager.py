@@ -16,14 +16,14 @@ tree = app_commands.CommandTree(client)
 ec2 = boto3.client('ec2', region_name='us-east-1')
 
 @tree.command(name="server_status", description="Reports whether the underlying game server is online.", guild=discord.Object(id=rat_pile_discord_id))
-@app_commands.choices(games=[
+@app_commands.choices(game=[
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
-async def mc_status(interaction, games: app_commands.Choice[int]):
-    if games.name == "Minecraft":
+async def mc_status(interaction, game: app_commands.Choice[int]):
+    if game.name == "Minecraft":
             id = minecraft_server_id
-    elif games.name == "Terraria":
+    elif game.name == "Terraria":
         id = terraria_server_id
     response = ec2.describe_instance_status(InstanceIds=[id])
     if response['InstanceStatuses']:
@@ -32,15 +32,15 @@ async def mc_status(interaction, games: app_commands.Choice[int]):
         await interaction.response.send_message("The Minecraft server is not running.")
 
 @tree.command(name="server_start", description="Starts the specified server.", guild=discord.Object(id=rat_pile_discord_id))
-@app_commands.choices(games=[
+@app_commands.choices(game=[
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
-async def mc_start(interaction, games: app_commands.Choice[int]):
+async def mc_start(interaction, game: app_commands.Choice[int]):
     if interaction.permissions.administrator:
-        if games.name == "Minecraft":
+        if game.name == "Minecraft":
             id = minecraft_server_id
-        elif games.name == "Terraria":
+        elif game.name == "Terraria":
             id = terraria_server_id
         response = ec2.describe_instance_status(InstanceIds=[id])
         if not response['InstanceStatuses']:
@@ -53,7 +53,7 @@ async def mc_start(interaction, games: app_commands.Choice[int]):
             try:
                 response = ec2.start_instances(InstanceIds=[id], DryRun=False)
                 print(response)
-                await interaction.response.send_message(f'The {games.name} server is now being started.')
+                await interaction.response.send_message(f'The {game.name} server is now being started.')
             except ClientError as e:
                 await interaction.response.send_message(f'The starting process encountered an error: {e}')
         else:
@@ -62,15 +62,15 @@ async def mc_start(interaction, games: app_commands.Choice[int]):
         await interaction.response.send_message('This command can only be executed by server admins.')
 
 @tree.command(name="server_stop", description="Stops the specified server.", guild=discord.Object(id=rat_pile_discord_id))
-@app_commands.choices(games=[
+@app_commands.choices(game=[
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
-async def mc_stop(interaction, games: app_commands.Choice[int]):
+async def mc_stop(interaction, game: app_commands.Choice[int]):
     if interaction.permissions.administrator:
-        if games.name == "Minecraft":
+        if game.name == "Minecraft":
             id = minecraft_server_id
-        elif games.name == "Terraria":
+        elif game.name == "Terraria":
             id = terraria_server_id
         response = ec2.describe_instance_status(InstanceIds=[id])
         if response['InstanceStatuses']:
@@ -83,7 +83,7 @@ async def mc_stop(interaction, games: app_commands.Choice[int]):
             try:
                 response = ec2.stop_instances(InstanceIds=[id], DryRun=False)
                 print(response)
-                await interaction.response.send_message(f'The {games.name} server is now being stopped.')
+                await interaction.response.send_message(f'The {game.name} server is now being stopped.')
             except ClientError as e:
                 await interaction.response.send_message('The stopping process encountered an error: {e}')
         else:
