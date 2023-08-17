@@ -9,6 +9,7 @@ python_version = '3.11'
 [packages]
 discord = "*"
 boto3 = "*"
+mcrcon = "*"
 
 [dev-packages]
 discord = "*"

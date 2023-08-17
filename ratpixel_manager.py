@@ -3,11 +3,16 @@ from discord import app_commands
 import boto3
 from botocore.exceptions import ClientError
 import config as CONFIG
+from mcrcon import MCRcon
+
+
 
 discord_secret = CONFIG.config['discord_secret']
 minecraft_server_id = CONFIG.config['mc_id']
 rat_pile_discord_id = CONFIG.config['server_id']
 terraria_server_id = CONFIG.config['terraria_id']
+rcon_pwd = CONFIG.config['rcon_pwd']
+mc_server_ip = CONFIG.config['mc_ip']
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -20,7 +25,7 @@ ec2 = boto3.client('ec2', region_name='us-east-1')
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
-async def mc_status(interaction, game: app_commands.Choice[int]):
+async def server_status(interaction, game: app_commands.Choice[int]):
     if game.name == "Minecraft":
             id = minecraft_server_id
     elif game.name == "Terraria":
@@ -36,7 +41,7 @@ async def mc_status(interaction, game: app_commands.Choice[int]):
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
-async def mc_start(interaction, game: app_commands.Choice[int]):
+async def server_start(interaction, game: app_commands.Choice[int]):
     if interaction.permissions.administrator:
         if game.name == "Minecraft":
             id = minecraft_server_id
@@ -66,7 +71,7 @@ async def mc_start(interaction, game: app_commands.Choice[int]):
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
-async def mc_stop(interaction, game: app_commands.Choice[int]):
+async def server_stop(interaction, game: app_commands.Choice[int]):
     if interaction.permissions.administrator:
         if game.name == "Minecraft":
             id = minecraft_server_id
@@ -90,6 +95,16 @@ async def mc_stop(interaction, game: app_commands.Choice[int]):
             await interaction.response.send_message('The server is already stopped.')
     else:
         await interaction.response.send_message('This command can only be executed by server admins.')
+
+@tree.command(name="minecraft_players_online", description="Lists players currently online in Minecraft.", guild=discord.Object(id=rat_pile_discord_id))
+async def minecraft_players(interaction):
+    response = ec2.describe_instance_status(InstanceIds=[id])
+    if response["InstanceStatuses"]:
+        with MCRcon(mc_server_ip, rcon_pwd) as mcr:
+            resp = mcr.command("/list")
+            await interaction.response.send_message(f'ONLINE: {resp}')
+    else:
+        await interaction.response.send_message('The Minecraft server is offline.')
 
 @client.event
 async def on_ready():
