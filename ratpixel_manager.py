@@ -15,9 +15,17 @@ tree = app_commands.CommandTree(client)
 
 ec2 = boto3.client('ec2', region_name='us-east-1')
 
-@tree.command(name="minecraft_status", description="Reports whether the underlying Minecraft server is online.", guild=discord.Object(id=rat_pile_discord_id))
-async def mc_status(interaction, arg):
-    response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
+@tree.command(name="server_status", description="Reports whether the underlying game server is online.", guild=discord.Object(id=rat_pile_discord_id))
+@tree.choices(games=[
+    app_commands.Choice(name="Terraria", value=1),
+    app_commands.Choice(name="Minecraft", value=2)
+])
+async def mc_status(interaction, games: app_commands.Choice[int]):
+    if games.name == "Minecraft":
+            id = minecraft_server_id
+    elif games.name == "Terraria":
+        id = terraria_server_id
+    response = ec2.describe_instance_status(InstanceIds=[id])
     if response['InstanceStatuses']:
         await interaction.response.send_message(f"The Minecraft server is running.")
     else:
