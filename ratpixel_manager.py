@@ -16,7 +16,7 @@ tree = app_commands.CommandTree(client)
 ec2 = boto3.client('ec2', region_name='us-east-1')
 
 @tree.command(name="server_status", description="Reports whether the underlying game server is online.", guild=discord.Object(id=rat_pile_discord_id))
-@tree.choices(games=[
+@app_commands.choices(games=[
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
@@ -32,7 +32,7 @@ async def mc_status(interaction, games: app_commands.Choice[int]):
         await interaction.response.send_message("The Minecraft server is not running.")
 
 @tree.command(name="server_start", description="Starts the specified server.", guild=discord.Object(id=rat_pile_discord_id))
-@tree.choices(games=[
+@app_commands.choices(games=[
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
@@ -62,7 +62,7 @@ async def mc_start(interaction, games: app_commands.Choice[int]):
         await interaction.response.send_message('This command can only be executed by server admins.')
 
 @tree.command(name="server_stop", description="Stops the specified server.", guild=discord.Object(id=rat_pile_discord_id))
-@tree.choices(games=[
+@app_commands.choices(games=[
     app_commands.Choice(name="Terraria", value=1),
     app_commands.Choice(name="Minecraft", value=2)
 ])
