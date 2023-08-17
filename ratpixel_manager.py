@@ -98,7 +98,7 @@ async def server_stop(interaction, game: app_commands.Choice[int]):
 
 @tree.command(name="minecraft_players_online", description="Lists players currently online in Minecraft.", guild=discord.Object(id=rat_pile_discord_id))
 async def minecraft_players(interaction):
-    response = ec2.describe_instance_status(InstanceIds=[id])
+    response = ec2.describe_instance_status(InstanceIds=[minecraft_server_id])
     if response["InstanceStatuses"]:
         with MCRcon(mc_server_ip, rcon_pwd) as mcr:
             resp = mcr.command("/list")
