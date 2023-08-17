@@ -102,7 +102,7 @@ async def minecraft_players(interaction):
     if response["InstanceStatuses"]:
         with MCRcon(mc_server_ip, rcon_pwd) as mcr:
             resp = mcr.command("/list")
-            await interaction.response.send_message(f'ONLINE: {resp}')
+            await interaction.response.send_message(f'{resp}')
     else:
         await interaction.response.send_message('The Minecraft server is offline.')
 
