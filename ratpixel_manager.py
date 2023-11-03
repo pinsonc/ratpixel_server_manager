@@ -19,6 +19,7 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 ec2 = boto3.client('ec2', region_name='us-east-1')
+ssm_client = boto3.client('ssm', region_name='us-east-1')
 
 @tree.command(name="server_status", description="Reports whether the underlying game server is online.", guild=discord.Object(id=rat_pile_discord_id))
 @app_commands.choices(game=[
@@ -106,9 +107,44 @@ async def minecraft_players(interaction):
     else:
         await interaction.response.send_message('The Minecraft server is offline.')
 
+@tree.command(name="minecraft_add_mod", description="Adds the linked mod and restarts the server.", guild=discord.Object(id=rat_pile_discord_id))
+@app_commands.describe(mod_id="The 7 digit CurseForge identifier.")
+@app_commands.rename(mod_id='download_link')
+@app_commands.describe(mod_name="The full filename of the mod (include .jar).")
+async def minecraft_players(interaction, mod_id: str, mod_name: str):
+    dl_url = f'https://media.forgecdn.net/files/<{int(mod_id[0:4])}>/{int(mod_id[5:])}/{mod_name}'
+    response = ssm_client.send_command(
+        DocumentName="AWS-RunShellScript", # One of AWS' preconfigured documents
+        Parameters={'commands': [
+            'sudo su',
+            'cd ../../minecraft/mods',
+            f'wget {dl_url}',
+            'systemctl daemon-reload',
+            'systemctl restart minecraft.service'
+        ]},
+        InstanceIds=[minecraft_server_id],
+    )
+    await interaction.response.send_message(f'{response}')
+
+@tree.command(name="minecraft_remove_mod", description="Removes the linked mod and restarts the server.", guild=discord.Object(id=rat_pile_discord_id))
+@app_commands.describe(mod_name="The full filename of the mod (include .jar).")
+async def minecraft_players(interaction, mod_name: str):
+    response = ssm_client.send_command(
+        DocumentName="AWS-RunShellScript", # One of AWS' preconfigured documents
+        Parameters={'commands': [
+            'sudo su',
+            'cd ../../minecraft/mods',
+            f'rm -f {mod_name}',
+            'systemctl daemon-reload',
+            'systemctl restart minecraft.service'
+        ]},
+        InstanceIds=[minecraft_server_id],
+    )
+    await interaction.response.send_message(f'{response}')
+
 @client.event
 async def on_ready():
-    await tree.sync(guild=discord.Object(id=rat_pile_discord_id))
+    await tree.sync()
     print(f'We have logged in as {client.user}')
 
 client.run(discord_secret)
